@@ -120,22 +120,6 @@ Running these tests ensures the correctness of the algorithm.
 
 ---
 
-## 项目结构 / Project Structure
-
-```
-QM-simplifier/
-├── index.html          # 主页面
-├── css/
-│   └── style.css       # 样式表
-├── js/
-│   ├── parser.js       # 表达式解析器
-│   ├── qm.js           # Q-M 算法核心
-│   ├── ui.js           # UI 交互与步骤渲染
-│   └── testCases.js    # 测试用例
-└── README.md           # 说明文档
-```
-
----
 
 ## 贡献 / Contributing
 
@@ -151,11 +135,6 @@ MIT License
 
 ---
 
-## 在线演示 / Live Demo
-
-（如果部署了在线版本，请填写链接）
-
----
 
 **感谢使用 QM-Simplifier！**  
 **Thank you for using QM-Simplifier!**
