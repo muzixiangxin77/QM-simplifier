@@ -41,6 +41,7 @@
 3. 点击 **“开始化简”** 按钮。
 4. 查看最终化简结果，并可展开下方各步骤查看详细过程。
 
+
 1. Open `index.html` in your browser (or visit the online link).
 2. Select the input mode in the input box:
    - **Logical expression**: enter an expression like `(A+B)(A'+B)`. Variables must be uppercase, use `'` for NOT.
@@ -58,6 +59,7 @@
 4. **必要质蕴含项**：找出只被一个质蕴含项覆盖的最小项，对应项为必要质蕴含项。
 5. **最小覆盖求解**：移除必要项及其覆盖项后，使用 Petrick 方法（或回溯）找出剩余最小项的最少质蕴含项组合。
 6. **输出最简式**：将选中的质蕴含项转换为逻辑表达式。
+
 
 1. **Parse input**: convert expression to truth table and collect minterms with output 1; or directly read minterm list.
 2. **Group and merge**: group minterms by number of 1s in binary, compare and merge adjacent groups, repeat until no further merging, obtain prime implicants.
