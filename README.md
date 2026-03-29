@@ -108,18 +108,6 @@ Running these tests ensures the correctness of the algorithm.
 
 ---
 
-## 技术栈 / Tech Stack
-
-- HTML5 / CSS3
-- JavaScript (ES6)
-- 无外部依赖，纯原生实现
-
-- HTML5 / CSS3
-- JavaScript (ES6)
-- No external dependencies, pure native implementation
-
----
-
 
 ## 贡献 / Contributing
 
