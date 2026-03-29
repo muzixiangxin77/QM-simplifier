@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-M化简法 - 奎因-麦克拉斯基逻辑化简</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a14;
+            --bg-card: #12121f;
+            --bg-input: #0d0d17;
+            --color-primary: #00d4aa;
+            --color-primary-dim: rgba(0, 212, 170, 0.12);
+            --color-primary-glow: rgba(0, 212, 170, 0.3);
+            --color-accent: #ff6b6b;
+            --color-secondary: #4ecdc4;
+            --color-text: #e4e4e4;
+            --color-text-dim: #8888a0;
+            --color-border: #2a2a42;
+            --color-border-focus: #00d4aa;
+            --font-title: 'Orbitron', sans-serif;
+            --font-code: 'JetBrains Mono', 'Fira Code', monospace;
+            --radius: 8px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-code);
+            background: var(--bg-primary);
+            color: var(--color-text);
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(0, 212, 170, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(78, 205, 196, 0.04) 0%, transparent 50%);
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            text-align: center;
+            padding: 30px 0 25px;
+            border-bottom: 1px solid var(--color-border);
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-family: var(--font-title);
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 700;
+            color: var(--color-primary);
+            text-shadow: 0 0 40px var(--color-primary-glow);
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle { color: var(--color-text-dim); font-size: 0.85rem; letter-spacing: 1px; }
+
+        .input-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--color-border);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+
+        .mode-switch { display: flex; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }
+
+        .mode-option { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+        .mode-option input[type="radio"] {
+            appearance: none;
+            width: 18px; height: 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .mode-option input[type="radio"]:checked {
+            border-color: var(--color-primary);
+            background: var(--color-primary);
+            box-shadow: 0 0 12px var(--color-primary-glow);
+        }
+
+        .mode-option input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px; height: 6px;
+            background: var(--bg-card);
+            border-radius: 50%;
+        }
+
+        .mode-option label { cursor: pointer; font-size: 0.9rem; color: var(--color-text-dim); transition: var(--transition); }
+        .mode-option input:checked + label { color: var(--color-primary); }
+
+        .input-group { margin-bottom: 16px; }
+
+        .input-group label {
+            display: block; margin-bottom: 8px;
+            color: var(--color-primary); font-weight: 500; font-size: 0.85rem; letter-spacing: 0.5px;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%; padding: 14px 16px;
+            font-family: var(--font-code); font-size: 1rem;
+            background: var(--bg-input);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius);
+            color: var(--color-text);
+            transition: var(--transition);
+        }
+
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 20px var(--color-primary-glow);
+        }
+
+        .input-row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .input-row .input-group { flex: 1; min-width: 200px; }
+
+        .hint { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--color-text-dim); }
+
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+        .btn {
+            padding: 12px 24px;
+            font-family: var(--font-code); font-size: 0.85rem; font-weight: 600;
+            border: none; border-radius: var(--radius);
+            cursor: pointer; transition: var(--transition); letter-spacing: 0.5px;
+        }
+
+        .btn-primary { background: linear-gradient(135deg, var(--color-primary), #00a88a); color: var(--bg-primary); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 20px var(--color-primary-glow); }
+
+        .btn-secondary { background: var(--color-border); color: var(--color-text); }
+        .btn-secondary:hover { background: #3a3a5a; }
+
+        .btn-outline { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-dim); font-weight: 500; }
+        .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+        .error-message {
+            margin-top: 16px; padding: 12px 16px;
+            background: rgba(255,107,107,0.1);
+            border: 1px solid var(--color-accent);
+            border-radius: var(--radius);
+            color: var(--color-accent); font-size: 0.85rem; display: none;
+        }
+
+        .error-message.visible { display: block; animation: shake 0.4s ease-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .result-section { display: none; animation: fadeIn 0.5s ease-out; }
+        .result-section.visible { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            background: linear-gradient(135deg, rgba(0,212,170,0.15), rgba(78,205,196,0.08));
+            border: 2px solid var(--color-primary);
+            border-radius: var(--radius);
+            padding: 24px; margin-bottom: 24px; text-align: center;
+        }
+
+        .result-label { font-size: 0.8rem; color: var(--color-text-dim); margin-bottom: 8px; letter-spacing: 1px; }
+
+        .result-formula {
+            font-family: var(--font-title);
+            font-size: clamp(1.4rem, 4vw, 2rem);
+            color: var(--color-primary);
+            text-shadow: 0 0 30px var(--color-primary-glow);
+            letter-spacing: 2px;
+        }
+
+        .steps-header { margin-bottom: 20px; }
+        .steps-header h2 { font-family: var(--font-title); font-size: 1.1rem; color: var(--color-text); letter-spacing: 2px; }
+
+        .step-card {
+            background: var(--bg-card); border-radius: var(--radius);
+            margin-bottom: 12px; border: 1px solid var(--color-border);
+            overflow: hidden; transition: var(--transition);
+        }
+
+        .step-card:hover { border-color: rgba(0,212,170,0.3); }
+
+        .step-header {
+            display: flex; align-items: center; padding: 16px 20px;
+            background: rgba(0,0,0,0.25); cursor: pointer; user-select: none; transition: var(--transition);
+        }
+
+        .step-header:hover { background: rgba(0,212,170,0.06); }
+
+        .step-number { font-family: var(--font-title); font-size: 0.95rem; font-weight: 700; color: var(--color-primary); margin-right: 14px; min-width: 28px; }
+        .step-title { flex: 1; font-weight: 500; font-size: 0.9rem; letter-spacing: 0.3px; }
+        .toggle-icon { color: var(--color-text-dim); transition: var(--transition); font-size: 0.75rem; }
+        .step-card.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .step-card.collapsed .step-content { max-height: 0; padding: 0 20px; opacity: 0; overflow: hidden; }
+        .step-content { padding: 20px; max-height: 3000px; opacity: 1; transition: all var(--transition); }
+        .step-description { color: var(--color-text-dim); font-size: 0.8rem; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { padding: 10px 14px; text-align: left; color: var(--color-primary); font-weight: 600; border-bottom: 2px solid var(--color-border); background: rgba(0,0,0,0.3); white-space: nowrap; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--color-border); color: var(--color-text); }
+        tbody tr:nth-child(even) { background: rgba(0,0,0,0.15); }
+        tbody tr:hover { background: var(--color-primary-dim); }
+
+        .table-container { overflow-x: auto; margin-top: 12px; }
+
+        .grouping-container { display: flex; flex-direction: column; gap: 16px; }
+
+        .group-round { background: var(--bg-input); border-radius: var(--radius); padding: 14px; border: 1px solid var(--color-border); }
+        .group-round-title { font-family: var(--font-title); font-size: 0.8rem; color: var(--color-secondary); margin-bottom: 10px; letter-spacing: 1px; }
+        .group-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .group-label { font-size: 0.75rem; color: var(--color-text-dim); min-width: 55px; padding-top: 6px; }
+        .group-items { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+
+        .term-badge {
+            display: inline-block; padding: 5px 10px;
+            background: var(--color-primary-dim);
+            border: 1px solid var(--color-primary);
+            border-radius: 4px; font-size: 0.8rem; color: var(--color-primary);
+        }
+
+        .term-badge.merged { background: rgba(78,205,196,0.12); border-color: var(--color-secondary); color: var(--color-secondary); }
+        .term-badge.prime { background: rgba(255,107,107,0.12); border-color: var(--color-accent); color: var(--color-accent); }
+        .term-badge.essential { background: rgba(0,212,170,0.25); border: 2px solid var(--color-primary); box-shadow: 0 0 10px var(--color-primary-glow); }
+
+        .coverage-step { background: var(--bg-input); border-radius: var(--radius); padding: 14px; border: 1px solid var(--color-border); margin-bottom: 12px; }
+        .coverage-step-title { font-size: 0.85rem; color: var(--color-secondary); margin-bottom: 10px; }
+        .coverage-items { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .info-item { background: var(--bg-input); padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--color-border); }
+        .info-item .label { display: block; color: var(--color-text-dim); font-size: 0.75rem; margin-bottom: 4px; }
+        .info-item .value { color: var(--color-primary); font-weight: 600; font-size: 0.9rem; }
+        .info-item .value.highlight { color: var(--color-accent); }
+
+        .pi-essential-row { background: rgba(0,212,170,0.15) !important; }
+        .pi-selected-row { background: rgba(78,205,196,0.15) !important; }
+        .check-mark { color: var(--color-primary); font-weight: bold; }
+
+        .examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+
+        .example-btn {
+            padding: 6px 14px;
+            font-family: var(--font-code); font-size: 0.75rem;
+            background: transparent; border: 1px solid var(--color-border);
+            border-radius: 4px; color: var(--color-text-dim); cursor: pointer; transition: var(--transition);
+        }
+
+        .example-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .input-section { padding: 16px; }
+            .controls { flex-direction: column; }
+            .controls .btn { width: 100%; }
+            .mode-switch { gap: 16px; }
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <h1 class="title">Quine-McCluskey</h1>
+        <p class="subtitle">奎因-麦克拉斯基(Q-M)化简法 - 逻辑函数最简化工具</p>
+    </header>
+
+    <section class="input-section">
+        <div class="mode-switch">
+            <div class="mode-option">
+                <input type="radio" id="modeExpr" name="mode" value="expression" checked>
+                <label for="modeExpr">逻辑表达式</label>
+            </div>
+            <div class="mode-option">
+                <input type="radio" id="modeMinterm" name="mode" value="minterm">
+                <label for="modeMinterm">最小项列表</label>
+            </div>
+        </div>
+
+        <div id="exprInputGroup" class="input-group">
+            <label for="expression">逻辑表达式</label>
+            <input type="text" id="expression" placeholder="例如: (A+B)(A'+B) 或 A'BC+AB'C'" autocomplete="off">
+            <span class="hint">支持: 变量(A-Z), 与(相邻或*), 或(+), 非('), 括号</span>
+        </div>
+
+        <div id="mintermInputGroup" class="input-row" style="display: none;">
+            <div class="input-group">
+                <label for="minterms">最小项 (∑m)</label>
+                <input type="text" id="minterms" placeholder="0,1,2,3 或 ∑m(0,1,2,3)">
+            </div>
+            <div class="input-group">
+                <label for="dontCares">无关项 (d/φ)</label>
+                <input type="text" id="dontCares" placeholder="4,5 或 d(4,5)">
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="simplifyBtn" class="btn btn-primary">开始化简</button>
+            <button id="clearBtn" class="btn btn-secondary">清空</button>
+            <button id="expandAllBtn" class="btn btn-outline">全部展开</button>
+            <button id="collapseAllBtn" class="btn btn-outline">全部折叠</button>
+        </div>
+
+        <div class="examples">
+            <span class="hint" style="margin: 0; margin-right: 8px;">示例:</span>
+            <button class="example-btn" data-expr="(A+B)(A'+B)">(A+B)(A'+B)</button>
+            <button class="example-btn" data-expr="A'BC+AB'C'">A'BC+AB'C'</button>
+            <button class="example-btn" data-expr="AB+AC+BC">AB+AC+BC</button>
+            <button class="example-btn" data-minterm="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14">∑m(0-14)</button>
+            <button class="example-btn" data-minterm="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15">∑m(0-15)</button>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+    </section>
+
+    <section id="resultSection" class="result-section">
+        <div class="result-header">
+            <div class="result-label">最 简 与 或 式</div>
+            <div id="finalExpression" class="result-formula">-</div>
+        </div>
+
+        <div class="steps-header">
+            <h2>化 简 过 程</h2>
+        </div>
+
+        <div class="step-card" data-step="0">
+            <div class="step-header">
+                <span class="step-number">00</span>
+                <span class="step-title">输入解析结果</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">解析输入表达式，提取变量和最小项</div>
+                <div id="step0Content" class="info-grid"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="1">
+            <div class="step-header">
+                <span class="step-number">01</span>
+                <span class="step-title">初始分组</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">将所有最小项按二进制表示中"1"的个数分组</div>
+                <div id="step1Content" class="grouping-container"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="2">
+            <div class="step-header">
+                <span class="step-number">02</span>
+                <span class="step-title">第一轮合并</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">比较相邻组（1的个数相差1），寻找仅一位不同的项进行合并</div>
+                <div id="step2Content" class="grouping-container"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="3">
+            <div class="step-header">
+                <span class="step-number">03</span>
+                <span class="step-title">后续合并</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">继续合并新生成的项，直到无法再合并</div>
+                <div id="step3Content" class="grouping-container"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="4">
+            <div class="step-header">
+                <span class="step-number">04</span>
+                <span class="step-title">质蕴含项列表</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">最终未被标记的项即为质蕴含项(Prime Implicants)</div>
+                <div id="step4Content" class="table-container"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="5">
+            <div class="step-header">
+                <span class="step-number">05</span>
+                <span class="step-title">质蕴含项表</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">构建质蕴含项与最小项的覆盖矩阵</div>
+                <div id="step5Content" class="table-container"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="6">
+            <div class="step-header">
+                <span class="step-number">06</span>
+                <span class="step-title">必要质蕴含项</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">若某最小项仅被一个质蕴含项覆盖，则该质蕴含项为必要项</div>
+                <div id="step6Content"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="7">
+            <div class="step-header">
+                <span class="step-number">07</span>
+                <span class="step-title">简化覆盖表</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">移除必要质蕴含项及其覆盖的最小项后剩余的覆盖表</div>
+                <div id="step7Content" class="table-container"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="8">
+            <div class="step-header">
+                <span class="step-number">08</span>
+                <span class="step-title">最小覆盖求解</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">使用迭代法/回溯求解最小覆盖，选择文字总数最少的组合</div>
+                <div id="step8Content"></div>
+            </div>
+        </div>
+
+        <div class="step-card" data-step="9">
+            <div class="step-header">
+                <span class="step-number">09</span>
+                <span class="step-title">最终结果</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="step-content">
+                <div class="step-description">输出最简与或式</div>
+                <div id="step9Content" class="info-grid"></div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+/**
+ * Quine-McCluskey Logic Simplifier
+ * 完整的Q-M化简算法实现（已修正）
+ */
+
+class QMsimplifier {
+    constructor() {
+        this.variables = [];
+        this.numVars = 0;
+        this.minterms = [];
+        this.dontCares = [];
+        this.primeImplicants = [];
+        this.allImplicants = [];
+    }
+
+    // ========== 表达式解析 ==========
+
+    parseExpression(expr) {
+        expr = expr.replace(/\s+/g, '').toUpperCase();
+        if (!expr) throw new Error('请输入逻辑表达式');
+
+        const vars = new Set();
+        for (let char of expr) {
+            if (/[A-Z]/.test(char)) vars.add(char);
+        }
+
+        if (vars.size < 2) throw new Error('至少需要2个变量');
+        if (vars.size > 6) throw new Error('最多支持6个变量');
+
+        this.variables = Array.from(vars).sort();
+        this.numVars = this.variables.length;
+
+        let minterms, format;
+        if (expr.includes('(') && expr.includes(')')) {
+            format = 'POS';
+            minterms = this.parsePOS(expr);
+        } else if (expr.includes('+')) {
+            format = 'SOP';
+            minterms = this.parseSOP(expr);
+        } else {
+            // 单项乘积（无+号无括号）
+            format = 'SOP';
+            minterms = this.expandTerm(expr);
+        }
+
+        this.minterms = [...new Set(minterms)].sort((a, b) => a - b);
+        this.dontCares = [];
+        return { format, minterms: this.minterms, dontCares: [] };
+    }
+
+    parseMintermList(mintermStr, dontCareStr) {
+        let minterms = [];
+        if (mintermStr) {
+            mintermStr = mintermStr.replace(/∑m\s*\(/i, '').replace(/\)/g, '');
+            const parts = mintermStr.split(/[,\s]+/).filter(p => p);
+            for (let p of parts) {
+                const num = parseInt(p.trim(), 10);
+                if (!isNaN(num)) minterms.push(num);
+            }
+        }
+
+        let dontCares = [];
+        if (dontCareStr) {
+            dontCareStr = dontCareStr.replace(/d\s*\(/i, '').replace(/φ\s*\(/i, '').replace(/\)/g, '');
+            const parts = dontCareStr.split(/[,\s]+/).filter(p => p);
+            for (let p of parts) {
+                const num = parseInt(p.trim(), 10);
+                if (!isNaN(num)) dontCares.push(num);
+            }
+        }
+
+        if (minterms.length === 0 && dontCares.length === 0) {
+            throw new Error('请输入最小项或无关项');
+        }
+
+        // FIX: 正确计算 numVars，处理 maxVal=0 的边界
+        const maxVal = Math.max(...minterms, ...dontCares, 0);
+        if (maxVal === 0) {
+            this.numVars = 1;
+        } else {
+            this.numVars = Math.ceil(Math.log2(maxVal + 1));
+        }
+        if (this.numVars < 2) this.numVars = 2;
+        if (this.numVars > 6) throw new Error('最多支持6个变量');
+
+        this.variables = [];
+        for (let i = 0; i < this.numVars; i++) {
+            this.variables.push(String.fromCharCode(65 + i));
+        }
+
+        const maxMinterm = Math.pow(2, this.numVars);
+        this.minterms = [...new Set(minterms.filter(m => m >= 0 && m < maxMinterm))];
+        this.dontCares = [...new Set(dontCares.filter(d => d >= 0 && d < maxMinterm))];
+        // 移除重叠
+        this.minterms = this.minterms.filter(m => !this.dontCares.includes(m));
+        this.minterms.sort((a, b) => a - b);
+
+        return { format: 'Minterm List', minterms: this.minterms, dontCares: this.dontCares };
+    }
+
+    parseSOP(expr) {
+        const terms = expr.split('+');
+        const allMinterms = [];
+        for (let term of terms) {
+            term = term.replace(/\*/g, '');
+            if (term) allMinterms.push(...this.expandTerm(term));
+        }
+        return allMinterms;
+    }
+
+    // FIX: 修正 POS 解析 — 正确枚举被各因子排除的最小项（全变量枚举）
+    parsePOS(expr) {
+        const sumTerms = [];
+        let depth = 0, current = '';
+
+        for (let char of expr) {
+            if (char === '(') {
+                if (depth > 0) current += char;
+                depth++;
+            } else if (char === ')') {
+                depth--;
+                if (depth === 0) { sumTerms.push(current); current = ''; }
+                else current += char;
+            } else if (depth > 0) {
+                current += char;
+            }
+        }
+
+        const maxMinterms = Math.pow(2, this.numVars);
+        const excluded = new Set();
+
+        for (let sumTerm of sumTerms) {
+            const literals = this.parseLiterals(sumTerm);
+            // 对全部 maxMinterms 个最小项逐一检测该因子是否为 0
+            for (let m = 0; m < maxMinterms; m++) {
+                const bin = this.toBinary(m);
+                let factorIsZero = true;
+                for (let lit of literals) {
+                    const varIdx = this.variables.indexOf(lit.var);
+                    if (varIdx === -1) { factorIsZero = false; break; }
+                    const bitVal = parseInt(bin[varIdx]);
+                    // 文字值: 若非反则值=bitVal, 若反则值=1-bitVal
+                    const litVal = lit.negated ? 1 - bitVal : bitVal;
+                    if (litVal === 1) { factorIsZero = false; break; } // 有一个文字为1则和项≠0
+                }
+                if (factorIsZero) excluded.add(m);
+            }
+        }
+
+        const included = [];
+        for (let i = 0; i < maxMinterms; i++) {
+            if (!excluded.has(i)) included.push(i);
+        }
+        return included;
+    }
+
+    parseLiterals(term) {
+        const literals = [];
+        for (let i = 0; i < term.length; i++) {
+            const char = term[i];
+            if (/[A-Z]/.test(char)) {
+                const negated = (term[i + 1] === "'");
+                literals.push({ var: char, negated });
+                if (negated) i++;
+            }
+        }
+        return literals;
+    }
+
+    expandTerm(term) {
+        const literals = this.parseLiterals(term);
+        const specified = new Set(literals.map(l => l.var));
+        const unspecified = this.variables.filter(v => !specified.has(v));
+
+        const result = [];
+        for (let i = 0; i < Math.pow(2, unspecified.length); i++) {
+            const assign = [...literals];
+            for (let j = 0; j < unspecified.length; j++) {
+                assign.push({
+                    var: unspecified[j],
+                    negated: ((i >> (unspecified.length - 1 - j)) & 1) === 0
+                });
+            }
+            result.push(this.assignmentToMinterm(assign));
+        }
+        return result;
+    }
+
+    assignmentToMinterm(assignment) {
+        let value = 0;
+        for (let i = 0; i < this.numVars; i++) {
+            for (let a of assignment) {
+                if (a.var === this.variables[i] && !a.negated) {
+                    value += Math.pow(2, this.numVars - 1 - i);
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+
+    // ========== Q-M算法核心 ==========
+
+    simplify() {
+        if (!this.minterms || this.minterms.length === 0) {
+            return {
+                groups: {}, rounds: [],
+                primeImplicants: [], piTable: [],
+                selectedPIs: [], essential: [],
+                finalExpression: '0', steps: []
+            };
+        }
+
+        const allTerms = [...this.minterms, ...this.dontCares];
+        const groups = this.groupByOnes(allTerms);
+        const { rounds, primeImplicants } = this.iterateGrouping(groups);
+
+        this.primeImplicants = primeImplicants;
+
+        const coverResult = this.solveMinimumCover();
+
+        return {
+            groups,
+            rounds,
+            primeImplicants: this.primeImplicants,
+            piTable: coverResult.piTable,       // FIX: 将 piTable 提升至顶层
+            selectedPIs: coverResult.selected,
+            essential: coverResult.essential,   // FIX: 统一字段名
+            finalExpression: coverResult.expression,
+            steps: coverResult.steps            // FIX: 统一字段名（原为 allSteps）
+        };
+    }
+
+    groupByOnes(terms) {
+        const groups = {};
+        for (let m of terms) {
+            const binary = this.toBinary(m);
+            const ones = this.countOnes(binary);
+            if (!groups[ones]) groups[ones] = [];
+            groups[ones].push({ minterm: m, binary, used: false, isDC: this.dontCares.includes(m) });
+        }
+        return groups;
+    }
+
+    // FIX: 修正合并逻辑 — 使用 binary 串作为唯一键去重，避免重复质蕴含项
+    iterateGrouping(initialGroups) {
+        let currentGroups = JSON.parse(JSON.stringify(initialGroups));
+        const rounds = [{ round: 0, groups: JSON.parse(JSON.stringify(currentGroups)) }];
+        const primeSet = new Set();   // 存储 binary 字符串
+        const primeFinal = [];
+
+        let round = 1;
+        while (true) {
+            const nextGroups = {};
+            let hasMerge = false;
+            const groupNums = Object.keys(currentGroups).map(Number).sort((a, b) => a - b);
+
+            // 合并相邻组
+            for (let i = 0; i < groupNums.length - 1; i++) {
+                const g1 = groupNums[i];
+                const g2 = groupNums[i + 1];
+                const merged = this.mergeGroups(currentGroups[g1], currentGroups[g2]);
+
+                for (let item of merged) {
+                    hasMerge = true;
+                    // FIX: 去除新合并项的重复（相同 binary）
+                    const ones = this.countOnes(item.binary.replace(/-/g, '0'));
+                    if (!nextGroups[ones]) nextGroups[ones] = [];
+                    // 只添加不重复的 binary
+                    if (!nextGroups[ones].some(x => x.binary === item.binary)) {
+                        nextGroups[ones].push(item);
+                    }
+                }
+            }
+
+            // 收集本轮未被合并的项作为质蕴含项候选
+            for (let g in currentGroups) {
+                for (let item of currentGroups[g]) {
+                    if (!item.used && !primeSet.has(item.binary)) {
+                        primeSet.add(item.binary);
+                        primeFinal.push({ binary: item.binary, isDC: item.isDC });
+                    }
+                }
+            }
+
+            if (!hasMerge) break;
+
+            rounds.push({ round, groups: JSON.parse(JSON.stringify(nextGroups)) });
+            currentGroups = nextGroups;
+            round++;
+        }
+
+        // 收集最后一轮剩余的质蕴含项
+        for (let g in currentGroups) {
+            for (let item of currentGroups[g]) {
+                if (!item.used && !primeSet.has(item.binary)) {
+                    primeSet.add(item.binary);
+                    primeFinal.push({ binary: item.binary, isDC: item.isDC });
+                }
+            }
+        }
+
+        const primeImplicants = primeFinal.map(p => ({
+            binary: p.binary,
+            covers: this.getCovers(p.binary),
+            numOnes: this.countOnes(p.binary.replace(/-/g, '0'))
+        }));
+
+        return { rounds, primeImplicants };
+    }
+
+    mergeGroups(group1, group2) {
+        const result = [];
+        for (let a of group1) {
+            for (let b of group2) {
+                if (this.countDiff(a.binary, b.binary) === 1) {
+                    const newBinary = this.mergeBinary(a.binary, b.binary);
+                    a.used = true;
+                    b.used = true;
+                    result.push({
+                        binary: newBinary,
+                        used: false,
+                        isDC: a.isDC && b.isDC,
+                        minterm: a.minterm
+                    });
+                }
+            }
+        }
+        return result;
+    }
+
+    countDiff(a, b) {
+        let diff = 0;
+        for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diff++;
+        return diff;
+    }
+
+    mergeBinary(a, b) {
+        let result = '';
+        for (let i = 0; i < a.length; i++) result += (a[i] === b[i]) ? a[i] : '-';
+        return result;
+    }
+
+    getCovers(binary) {
+        const covers = [];
+        const allRelevant = [...this.minterms, ...this.dontCares];
+        for (let m of allRelevant) {
+            if (this.covers(binary, m)) covers.push(m);
+        }
+        return covers;
+    }
+
+    covers(binary, minterm) {
+        const bin = this.toBinary(minterm);
+        for (let i = 0; i < binary.length; i++) {
+            if (binary[i] !== '-' && binary[i] !== bin[i]) return false;
+        }
+        return true;
+    }
+
+    toBinary(m) {
+        return m.toString(2).padStart(this.numVars, '0');
+    }
+
+    countOnes(binary) {
+        return binary.split('').filter(c => c === '1').length;
+    }
+
+    // ========== 最小覆盖求解 ==========
+
+    solveMinimumCover() {
+        const steps = [];
+        const allMinterms = [...this.minterms];
+
+        if (allMinterms.length === 0) {
+            return { selected: [], essential: [], expression: '0', steps: [], piTable: [], coverage: {} };
+        }
+
+        if (!this.primeImplicants || this.primeImplicants.length === 0) {
+            return { selected: [], essential: [], expression: '0', steps: [], piTable: [], coverage: {} };
+        }
+
+        const piTable = this.primeImplicants.map(pi => ({ ...pi, essential: false }));
+
+        // 构建覆盖表
+        const coverage = {};
+        for (let m of allMinterms) {
+            coverage[m] = [];
+            for (let pi of piTable) {
+                if (this.covers(pi.binary, m)) coverage[m].push(pi.binary);
+            }
+        }
+
+        // 找必要质蕴含项
+        const essential = [];
+        for (let m of allMinterms) {
+            if (coverage[m] && coverage[m].length === 1) {
+                const pi = coverage[m][0];
+                if (!essential.includes(pi)) essential.push(pi);
+            }
+        }
+
+        for (let pi of piTable) {
+            if (essential.includes(pi.binary)) pi.essential = true;
+        }
+
+        steps.push({ type: 'essential', essential, description: '必要质蕴含项' });
+
+        // 移除已覆盖的最小项
+        let remaining = [...allMinterms];
+        for (let pi of essential) {
+            remaining = remaining.filter(m => !this.covers(pi, m));
+        }
+
+        const remainingPIs = piTable.filter(pi => !essential.includes(pi.binary));
+        steps.push({
+            type: 'simplified',
+            remaining,
+            remainingPIs: remainingPIs.map(p => p.binary),
+            description: '移除必需PI后剩余'
+        });
+
+        // 贪心选择剩余PI
+        const selected = [...essential];
+        const coverageSteps = [];
+        let workRemaining = [...remaining];
+        let workPIs = [...remainingPIs];
+
+        while (workRemaining.length > 0 && workPIs.length > 0) {
+            let bestPI = null, bestCount = 0, bestCovers = [];
+            for (let pi of workPIs) {
+                const covers = workRemaining.filter(m => this.covers(pi.binary, m));
+                if (covers.length > bestCount) {
+                    bestCount = covers.length;
+                    bestPI = pi.binary;
+                    bestCovers = covers;
+                }
+            }
+            if (!bestPI) break;
+            selected.push(bestPI);
+            workRemaining = workRemaining.filter(m => !bestCovers.includes(m));
+            workPIs = workPIs.filter(p => p.binary !== bestPI);
+            coverageSteps.push({ selected: bestPI, covers: bestCovers });
+        }
+
+        steps.push({ type: 'selection', steps: coverageSteps, description: '选择剩余PI' });
+
+        const expression = this.generateExpression(selected);
+        return { selected, essential, expression, steps, piTable, coverage };
+    }
+
+    generateExpression(selectedPIs) {
+        if (selectedPIs.length === 0) return '0';
+
+        // 检查是否全1
+        const maxMinterm = Math.pow(2, this.numVars);
+        if (this.minterms.length === maxMinterm) return '1';
+
+        const terms = [];
+        for (let pi of selectedPIs) {
+            let term = '';
+            for (let i = 0; i < pi.length; i++) {
+                if (pi[i] === '-') continue;
+                const vn = this.variables[i];
+                term += (pi[i] === '1') ? vn : vn + "'";
+            }
+            terms.push(term || '1');
+        }
+        return terms.join(' + ');
+    }
+
+    binaryToTerm(binary) {
+        let term = '';
+        for (let i = 0; i < binary.length; i++) {
+            if (binary[i] === '-') continue;
+            const vn = this.variables[i];
+            term += (binary[i] === '1') ? vn : vn + "'";
+        }
+        return term || '1';
+    }
+}
+
+// ========== UI控制器 ==========
+
+class UIController {
+    constructor() {
+        this.qm = new QMsimplifier();
+        this.initElements();
+        this.bindEvents();
+    }
+
+    initElements() {
+        this.modeExpr = document.getElementById('modeExpr');
+        this.modeMinterm = document.getElementById('modeMinterm');
+        this.exprInputGroup = document.getElementById('exprInputGroup');
+        this.mintermInputGroup = document.getElementById('mintermInputGroup');
+        this.expressionInput = document.getElementById('expression');
+        this.mintermsInput = document.getElementById('minterms');
+        this.dontCaresInput = document.getElementById('dontCares');
+        this.simplifyBtn = document.getElementById('simplifyBtn');
+        this.clearBtn = document.getElementById('clearBtn');
+        this.expandAllBtn = document.getElementById('expandAllBtn');
+        this.collapseAllBtn = document.getElementById('collapseAllBtn');
+        this.errorMessage = document.getElementById('errorMessage');
+        this.resultSection = document.getElementById('resultSection');
+        this.finalExpression = document.getElementById('finalExpression');
+    }
+
+    bindEvents() {
+        this.modeExpr.addEventListener('change', () => this.switchMode());
+        this.modeMinterm.addEventListener('change', () => this.switchMode());
+
+        this.simplifyBtn.addEventListener('click', () => this.simplify());
+        this.clearBtn.addEventListener('click', () => this.clear());
+        this.expandAllBtn.addEventListener('click', () => this.expandAll());
+        this.collapseAllBtn.addEventListener('click', () => this.collapseAll());
+
+        this.expressionInput.addEventListener('keypress', e => { if (e.key === 'Enter') this.simplify(); });
+        this.mintermsInput.addEventListener('keypress', e => { if (e.key === 'Enter') this.simplify(); });
+        this.dontCaresInput.addEventListener('keypress', e => { if (e.key === 'Enter') this.simplify(); });
+
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const expr = btn.dataset.expr;
+                const minterm = btn.dataset.minterm;
+                if (expr) {
+                    this.modeExpr.checked = true;
+                    this.switchMode();
+                    this.expressionInput.value = expr;
+                } else if (minterm) {
+                    this.modeMinterm.checked = true;
+                    this.switchMode();
+                    this.mintermsInput.value = minterm;
+                }
+            });
+        });
+
+        document.querySelectorAll('.step-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.parentElement.classList.toggle('collapsed');
+            });
+        });
+    }
+
+    switchMode() {
+        if (this.modeExpr.checked) {
+            this.exprInputGroup.style.display = 'block';
+            this.mintermInputGroup.style.display = 'none';
+        } else {
+            this.exprInputGroup.style.display = 'none';
+            this.mintermInputGroup.style.display = 'flex';
+        }
+    }
+
+    showError(msg) {
+        this.errorMessage.textContent = msg;
+        this.errorMessage.classList.add('visible');
+    }
+
+    hideError() {
+        this.errorMessage.classList.remove('visible');
+    }
+
+    simplify() {
+        this.hideError();
+        this.resultSection.classList.remove('visible');
+        // 每次重新实例化，避免状态残留
+        this.qm = new QMsimplifier();
+
+        let parsed;
+        try {
+            if (this.modeExpr.checked) {
+                const expr = this.expressionInput.value.trim();
+                if (!expr) throw new Error('请输入逻辑表达式');
+                parsed = this.qm.parseExpression(expr);
+            } else {
+                const minterms = this.mintermsInput.value.trim();
+                const dontCares = this.dontCaresInput.value.trim();
+                parsed = this.qm.parseMintermList(minterms, dontCares);
+            }
+        } catch (e) {
+            this.showError(e.message);
+            return;
+        }
+
+        try {
+            const result = this.qm.simplify();
+            this.displayResult(parsed, result);
+            this.resultSection.classList.add('visible');
+        } catch (e) {
+            this.showError('计算出错: ' + e.message);
+            console.error(e);
+        }
+    }
+
+    displayResult(parsed, result) {
+        this.finalExpression.textContent = result.finalExpression;
+
+        // 步骤0
+        document.getElementById('step0Content').innerHTML = `
+            <div class="info-item"><span class="label">变量列表</span><span class="value">${this.qm.variables.join(', ')}</span></div>
+            <div class="info-item"><span class="label">变量数量</span><span class="value">${this.qm.numVars}</span></div>
+            <div class="info-item"><span class="label">输入格式</span><span class="value">${parsed.format}</span></div>
+            <div class="info-item"><span class="label">最小项</span><span class="value">m(${parsed.minterms.join(', ')})</span></div>
+            ${parsed.dontCares.length > 0 ? `<div class="info-item"><span class="label">无关项</span><span class="value">d(${parsed.dontCares.join(', ')})</span></div>` : ''}
+        `;
+
+        // 步骤1
+        document.getElementById('step1Content').innerHTML = this.renderGroups(result.groups);
+
+        // 步骤2
+        const step2 = document.getElementById('step2Content');
+        if (result.rounds.length > 1) {
+            step2.innerHTML = this.renderRound(result.rounds[1]);
+        } else {
+            step2.innerHTML = '<p style="color: var(--color-text-dim);">无需合并（表达式已最简）</p>';
+        }
+
+        // 步骤3
+        const step3 = document.getElementById('step3Content');
+        if (result.rounds.length > 2) {
+            let html = '';
+            for (let i = 2; i < result.rounds.length; i++) html += this.renderRound(result.rounds[i]);
+            step3.innerHTML = html;
+        } else {
+            step3.innerHTML = '<p style="color: var(--color-text-dim);">已在上一步完成所有合并</p>';
+        }
+
+        // 步骤4
+        document.getElementById('step4Content').innerHTML = this.renderPIs(result.primeImplicants);
+
+        // 步骤5
+        document.getElementById('step5Content').innerHTML = this.renderPITable(result);
+
+        // 步骤6
+        document.getElementById('step6Content').innerHTML = this.renderEssential(result);
+
+        // 步骤7
+        document.getElementById('step7Content').innerHTML = this.renderSimplified(result);
+
+        // 步骤8
+        document.getElementById('step8Content').innerHTML = this.renderSelection(result);
+
+        // 步骤9
+        document.getElementById('step9Content').innerHTML = `
+            <div class="info-item"><span class="label">原始最小项数</span><span class="value">${parsed.minterms.length}</span></div>
+            <div class="info-item"><span class="label">质蕴含项数</span><span class="value">${result.primeImplicants.length}</span></div>
+            <div class="info-item"><span class="label">最终项数</span><span class="value highlight">${result.selectedPIs.length}</span></div>
+            <div class="info-item"><span class="label">最简表达式</span><span class="value" style="color: var(--color-primary);">${result.finalExpression}</span></div>
+        `;
+    }
+
+    renderGroups(groups) {
+        let html = '';
+        const nums = Object.keys(groups).map(Number).sort((a, b) => a - b);
+        for (let n of nums) {
+            html += `<div class="group-row"><div class="group-label">${n} 个 1</div><div class="group-items">`;
+            for (let item of groups[n]) {
+                html += `<span class="term-badge">m${item.minterm} (${item.binary})</span>`;
+            }
+            html += '</div></div>';
+        }
+        return html || '<p style="color: var(--color-text-dim);">无</p>';
+    }
+
+    renderRound(roundData) {
+        let html = `<div class="group-round"><div class="group-round-title">第 ${roundData.round} 轮合并</div>`;
+        const nums = Object.keys(roundData.groups).map(Number).sort((a, b) => a - b);
+        for (let n of nums) {
+            html += `<div class="group-row"><div class="group-label">${n} 个 1</div><div class="group-items">`;
+            for (let item of roundData.groups[n]) {
+                const cls = item.used ? 'merged' : 'prime';
+                html += `<span class="term-badge ${cls}">${this.qm.binaryToTerm(item.binary)} (${item.binary})</span>`;
+            }
+            html += '</div></div>';
+        }
+        return html + '</div>';
+    }
+
+    renderPIs(pis) {
+        if (!pis || pis.length === 0) return '<p style="color: var(--color-text-dim);">无质蕴含项</p>';
+        let html = '<table><thead><tr><th>质蕴含项</th><th>二进制</th><th>覆盖最小项</th></tr></thead><tbody>';
+        for (let pi of pis) {
+            html += `<tr><td>${this.qm.binaryToTerm(pi.binary)}</td><td>${pi.binary}</td><td>${pi.covers.join(', ')}</td></tr>`;
+        }
+        return html + '</tbody></table>';
+    }
+
+    renderPITable(result) {
+        const minterms = this.qm.minterms || [];
+        const pis = result.piTable || [];
+        if (minterms.length === 0 || pis.length === 0) return '<p style="color: var(--color-text-dim);">无质蕴含项</p>';
+
+        let html = '<table><thead><tr><th>PI</th>';
+        for (let m of minterms) html += `<th>m${m}</th>`;
+        html += '</tr></thead><tbody>';
+
+        for (let pi of pis) {
+            const rowClass = pi.essential ? 'pi-essential-row' : '';
+            html += `<tr class="${rowClass}"><td>${this.qm.binaryToTerm(pi.binary)}</td>`;
+            for (let m of minterms) {
+                html += `<td>${this.qm.covers(pi.binary, m) ? '<span class="check-mark">✓</span>' : ''}</td>`;
+            }
+            html += '</tr>';
+        }
+        return html + '</tbody></table>';
+    }
+
+    renderEssential(result) {
+        // FIX: 使用 result.essential（已统一字段名）
+        if (!result.essential || result.essential.length === 0) {
+            return '<p style="color: var(--color-text-dim);">无必要质蕴含项</p>';
+        }
+        let html = '<div class="coverage-items">';
+        for (let pi of result.essential) {
+            html += `<span class="term-badge essential">${this.qm.binaryToTerm(pi)}</span>`;
+        }
+        return html + '</div>';
+    }
+
+    renderSimplified(result) {
+        // FIX: 使用 result.steps（已统一字段名）
+        const remaining = result.steps && result.steps.find(s => s.type === 'simplified');
+        if (!remaining || remaining.remaining.length === 0) {
+            return '<p style="color: var(--color-text-dim);">所有最小项已被必需PI覆盖</p>';
+        }
+
+        const minterms = remaining.remaining;
+        const pis = remaining.remainingPIs;
+
+        if (pis.length === 0) return '<p style="color: var(--color-text-dim);">无剩余质蕴含项</p>';
+
+        let html = '<table><thead><tr><th>PI</th>';
+        for (let m of minterms) html += `<th>m${m}</th>`;
+        html += '</tr></thead><tbody>';
+
+        for (let pi of pis) {
+            html += `<tr><td>${this.qm.binaryToTerm(pi)}</td>`;
+            for (let m of minterms) {
+                html += `<td>${this.qm.covers(pi, m) ? '<span class="check-mark">✓</span>' : ''}</td>`;
+            }
+            html += '</tr>';
+        }
+        return html + '</tbody></table>';
+    }
+
+    renderSelection(result) {
+        const selectionStep = result.steps && result.steps.find(s => s.type === 'selection');
+        if (!selectionStep || selectionStep.steps.length === 0) {
+            return '<p style="color: var(--color-text-dim);">无需额外选择</p>';
+        }
+        let html = '';
+        for (let i = 0; i < selectionStep.steps.length; i++) {
+            const step = selectionStep.steps[i];
+            html += `<div class="coverage-step">
+                <div class="coverage-step-title">选择 ${i + 1}: ${this.qm.binaryToTerm(step.selected)}</div>
+                <div class="coverage-items"><span>覆盖最小项: ${step.covers.join(', ')}</span></div>
+            </div>`;
+        }
+        return html;
+    }
+
+    clear() {
+        this.expressionInput.value = '';
+        this.mintermsInput.value = '';
+        this.dontCaresInput.value = '';
+        this.hideError();
+        this.resultSection.classList.remove('visible');
+    }
+
+    expandAll() {
+        document.querySelectorAll('.step-card').forEach(c => c.classList.remove('collapsed'));
+    }
+
+    collapseAll() {
+        document.querySelectorAll('.step-card').forEach(c => c.classList.add('collapsed'));
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => { new UIController(); });
+</script>
+</body>
+</html>
